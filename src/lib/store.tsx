@@ -167,35 +167,57 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           notes: "",
           solvedAt: null,
         };
+        const wasSolved = existing.status === "solved";
+        const nowSolved = status === "solved";
+
         const updated = {
           ...prev,
           [problemNumber]: {
             ...existing,
             status,
-            solvedAt:
-              status === "solved"
-                ? new Date().toISOString()
-                : existing.solvedAt,
+            solvedAt: nowSolved
+              ? new Date().toISOString()
+              : nowSolved
+              ? existing.solvedAt
+              : null,
           },
         };
-        return updated;
-      });
 
-      // Update daily log
-      const today = new Date().toISOString().split("T")[0];
-      setDailyLogs((prev) => {
-        const existing = prev.find((l) => l.date === today);
-        if (status === "solved" && !existing) {
-          return [...prev, { date: today, problemsCompleted: 1 }];
+        // Update daily log based on the actual change
+        if (wasSolved !== nowSolved) {
+          const today = new Date().toISOString().split("T")[0];
+          setDailyLogs((prevLogs) => {
+            const existingLog = prevLogs.find((l) => l.date === today);
+
+            if (nowSolved) {
+              // Marking as solved: increment
+              if (!existingLog) {
+                return [...prevLogs, { date: today, problemsCompleted: 1 }];
+              }
+              return prevLogs.map((l) =>
+                l.date === today
+                  ? { ...l, problemsCompleted: l.problemsCompleted + 1 }
+                  : l
+              );
+            } else {
+              // Unmarking from solved: decrement (but never below 0)
+              if (existingLog) {
+                const newCount = Math.max(0, existingLog.problemsCompleted - 1);
+                if (newCount === 0) {
+                  return prevLogs.filter((l) => l.date !== today);
+                }
+                return prevLogs.map((l) =>
+                  l.date === today
+                    ? { ...l, problemsCompleted: newCount }
+                    : l
+                );
+              }
+              return prevLogs;
+            }
+          });
         }
-        if (status === "solved" && existing) {
-          return prev.map((l) =>
-            l.date === today
-              ? { ...l, problemsCompleted: l.problemsCompleted + 1 }
-              : l
-          );
-        }
-        return prev;
+
+        return updated;
       });
     },
     []
@@ -372,26 +394,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [getScheduleDay, getDayProblems]);
 
   const getCurrentStreak = useCallback((): number => {
-    if (dailyLogs.length === 0) return 0;
+    // Build a set of dates with activity for O(1) lookup
+    const activeDates = new Set<string>();
+    dailyLogs.forEach((l) => {
+      if (l.problemsCompleted > 0) activeDates.add(l.date);
+    });
 
-    const sorted = [...dailyLogs]
-      .filter((l) => l.problemsCompleted > 0)
-      .sort((a, b) => b.date.localeCompare(a.date));
-
-    if (sorted.length === 0) return 0;
+    if (activeDates.size === 0) return 0;
 
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split("T")[0];
 
-    for (let i = 0; i < 365; i++) {
+    // Check if today has activity — if not, start checking from yesterday
+    const startOffset = activeDates.has(todayStr) ? 0 : 1;
+
+    for (let i = startOffset; i < 365; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
       const dateStr = checkDate.toISOString().split("T")[0];
-      const log = sorted.find((l) => l.date === dateStr);
-      if (log && log.problemsCompleted > 0) {
+
+      if (activeDates.has(dateStr)) {
         streak++;
-      } else if (i > 0) {
+      } else {
         break;
       }
     }
@@ -449,8 +475,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [data.patterns, data.problems, progress]);
 
   const getHeatmapData = useCallback((): DailyLog[] => {
-    return dailyLogs;
-  }, [dailyLogs]);
+    // Build heatmap from progress solvedAt dates (source of truth)
+    const dateMap = new Map<string, number>();
+
+    // Count problems solved per date from actual progress
+    Object.values(progress).forEach((p) => {
+      if (p.status === "solved" && p.solvedAt) {
+        const date = p.solvedAt.split("T")[0];
+        dateMap.set(date, (dateMap.get(date) || 0) + 1);
+      }
+    });
+
+    // Merge with dailyLogs for dates that might not have solvedAt
+    dailyLogs.forEach((log) => {
+      if (!dateMap.has(log.date) && log.problemsCompleted > 0) {
+        dateMap.set(log.date, log.problemsCompleted);
+      }
+    });
+
+    return Array.from(dateMap.entries()).map(([date, count]) => ({
+      date,
+      problemsCompleted: count,
+    }));
+  }, [progress, dailyLogs]);
 
   // ── Store ───────────────────────────────────────────────────────────────
   const store: Store = useMemo(

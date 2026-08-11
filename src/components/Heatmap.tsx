@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getLocalDateString } from "@/lib/utils";
 import type { DailyLog } from "@/lib/types";
 
 interface HeatmapProps {
@@ -57,13 +57,11 @@ export function Heatmap({ data, startDate, className }: HeatmapProps) {
 
         if (date > today) continue;
 
-        const dateStr = date.toISOString().split("T")[0];
+        const dateStr = getLocalDateString(date);
         const count = dataMap.get(dateStr) || 0;
 
         cells.push({
           date: dateStr,
-          count,
-          x: week * (CELL_SIZE + CELL_GAP),
           y: day * (CELL_SIZE + CELL_GAP),
           month: date.getMonth(),
         });

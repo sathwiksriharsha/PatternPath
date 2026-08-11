@@ -21,6 +21,7 @@ import type {
   Pattern,
 } from "./types";
 import rawData from "@/data/problems.json";
+import { getLocalDateString } from "@/lib/utils";
 
 // ── Storage keys ────────────────────────────────────────────────────────────
 const STORAGE_KEYS = {
@@ -176,7 +177,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             ...existing,
             status,
             solvedAt: nowSolved
-              ? new Date().toISOString()
+              ? getLocalDateString()
               : nowSolved
               ? existing.solvedAt
               : null,
@@ -185,7 +186,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         // Update daily log based on the actual change
         if (wasSolved !== nowSolved) {
-          const today = new Date().toISOString().split("T")[0];
+          const today = getLocalDateString();
           setDailyLogs((prevLogs) => {
             const existingLog = prevLogs.find((l) => l.date === today);
 
@@ -405,7 +406,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = getLocalDateString(today);
 
     // Check if today has activity — if not, start checking from yesterday
     const startOffset = activeDates.has(todayStr) ? 0 : 1;
@@ -413,7 +414,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     for (let i = startOffset; i < 365; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
-      const dateStr = checkDate.toISOString().split("T")[0];
+      const dateStr = getLocalDateString(checkDate);
 
       if (activeDates.has(dateStr)) {
         streak++;
@@ -481,6 +482,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // Count problems solved per date from actual progress
     Object.values(progress).forEach((p) => {
       if (p.status === "solved" && p.solvedAt) {
+        // solvedAt is already formatted as YYYY-MM-DD now thanks to the previous fix,
+        // but we'll support both old and new formats safely
         const date = p.solvedAt.split("T")[0];
         dateMap.set(date, (dateMap.get(date) || 0) + 1);
       }

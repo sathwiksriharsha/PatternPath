@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 sm:space-y-8 animate-fade-in">
         {/* Page header */}
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
@@ -107,7 +107,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Today's Problems */}
-        <section className="glass-card-static p-6">
+        <section className="glass-card-static p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <BookOpen

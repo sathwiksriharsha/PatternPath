@@ -77,7 +77,7 @@ export default function PatternDetailPage() {
         </Link>
 
         {/* Pattern header */}
-        <div className="glass-card-static p-6">
+        <div className="glass-card-static p-4 sm:p-6">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex-1">
               <p className="text-xs text-[var(--accent-blue)] font-medium uppercase tracking-wider mb-1">

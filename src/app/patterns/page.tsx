@@ -90,7 +90,7 @@ export default function PatternsPage() {
         </div>
 
         {/* Section filters */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:-mx-2 sm:px-2 scrollbar-hide">
           <Filter size={14} className="text-[var(--text-muted)] flex-shrink-0" />
           {SECTIONS.map((section) => (
             <button

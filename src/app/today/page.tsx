@@ -48,7 +48,7 @@ export default function TodayPage() {
     <AppShell>
       <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               {isToday ? "Today's Problems" : "Daily Problems"}

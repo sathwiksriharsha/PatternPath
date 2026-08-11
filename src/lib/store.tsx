@@ -397,8 +397,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const getCurrentStreak = useCallback((): number => {
     // Build a set of dates with activity for O(1) lookup
     const activeDates = new Set<string>();
+    
+    // Add dates from dailyLogs
     dailyLogs.forEach((l) => {
       if (l.problemsCompleted > 0) activeDates.add(l.date);
+    });
+
+    // Add dates from actual problem progress (more robust)
+    Object.values(progress).forEach((p) => {
+      if (p.status === "solved" && p.solvedAt) {
+        // Fallback for old UTC strings vs new local date strings
+        const dateStr = p.solvedAt.includes("T") 
+          ? p.solvedAt.split("T")[0] 
+          : p.solvedAt;
+        activeDates.add(dateStr);
+      }
     });
 
     if (activeDates.size === 0) return 0;

@@ -62,6 +62,8 @@ export function Heatmap({ data, startDate, className }: HeatmapProps) {
 
         cells.push({
           date: dateStr,
+          count,
+          x: week * (CELL_SIZE + CELL_GAP),
           y: day * (CELL_SIZE + CELL_GAP),
           month: date.getMonth(),
         });
